@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Search as SearchIcon, MapPin, User, Hash, ChevronDown, X, Filter, Loader2, FileText } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import OcrProgressBanner from '../components/OcrProgressBanner';
 import { ALL_AP } from '../mock';
 import { api } from '../lib/api';
 
@@ -88,6 +89,12 @@ export default function SearchPage() {
     return () => clearTimeout(t);
   }, [fetchPage]);
 
+  // Auto-refresh every 30s so newly-OCR'd names appear without manual reload
+  useEffect(() => {
+    const id = setInterval(fetchPage, 30000);
+    return () => clearInterval(id);
+  }, [fetchPage]);
+
   const assemblyName = (code) => assemblies.find((a) => a.code === code)?.name || code;
   const openSourcePdf = (v) => window.open(api.sourcePdfUrl(v.assemblyCode, v.partNo), '_blank');
 
@@ -101,6 +108,10 @@ export default function SearchPage() {
         </div>
         <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">Voter Search</h1>
         <p className="mt-2 text-slate-400 text-sm">Search by name (English/Telugu), EPIC ID, house number or part. Click any record to view the source PDF.</p>
+
+        <div className="mt-4">
+          <OcrProgressBanner />
+        </div>
 
         <div className="mt-6 flex flex-col lg:flex-row gap-3 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
           <select value={assembly} onChange={(e) => setAssembly(e.target.value)} className="lg:w-60 appearance-none bg-[#0d0d1a] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500/50">

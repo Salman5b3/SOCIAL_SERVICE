@@ -58,11 +58,17 @@ async def get_stats():
     voter_count = await db.voters.count_documents({})
     assemblies = await db.assemblies.count_documents({})
     parts = await db.parts.count_documents({})
+    ocrd = await db.voters.count_documents({"nameEn": {"$exists": True, "$ne": ""}})
+    rct_total = await db.voters.count_documents({"assemblyCode": "152"})
+    rct_ocrd = await db.voters.count_documents({"assemblyCode": "152", "nameEn": {"$exists": True, "$ne": ""}})
     return {
         "voters": voter_count,
         "assemblies": assemblies,
         "parts": parts,
         "nodes": 4,
+        "ocrd": ocrd,
+        "rctTotal": rct_total,
+        "rctOcrd": rct_ocrd,
     }
 
 
