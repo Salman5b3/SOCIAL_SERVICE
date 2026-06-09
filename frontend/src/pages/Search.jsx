@@ -178,7 +178,11 @@ export default function SearchPage() {
                     ) : (
                       <div className="text-slate-300 font-semibold leading-tight">
                         Voter #{v.serialNo}
-                        <span className="block text-[10px] text-amber-400/80 font-normal mt-0.5">Name pending OCR</span>
+                        {v.assemblyCode === '152' ? (
+                          <span className="block text-[10px] text-amber-400/80 font-normal mt-0.5">Name pending OCR</span>
+                        ) : (
+                          <span className="block text-[10px] text-slate-500 font-normal mt-0.5">Name in source PDF</span>
+                        )}
                       </div>
                     )}
                     <div className="text-xs text-slate-400 mt-1">{v.gender} · Age {v.age || '—'}</div>

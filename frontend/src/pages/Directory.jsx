@@ -133,11 +133,14 @@ export default function DirectoryPage() {
                     const te = v.nameTe || '';
                     const relEn = v.relationNameEn || '';
                     const relTe = v.relationNameTe || '';
+                    const isRayachoty = v.assemblyCode === '152';
                     return (
                     <tr key={`${v.assemblyCode}-${v.partNo}-${v.serialNo}`} className={`border-b border-white/5 hover:bg-white/[0.03] ${i % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
                       <td className="px-4 py-3 text-slate-400">{v.serialNo}</td>
                       <td className="px-4 py-3 text-white max-w-[220px] truncate" title={en}>
-                        {en || <span className="text-amber-400/70 text-xs italic">pending OCR</span>}
+                        {en || (isRayachoty
+                          ? <span className="text-amber-400/70 text-xs italic">pending OCR</span>
+                          : <span className="text-slate-600 text-xs">see PDF</span>)}
                       </td>
                       <td className="px-4 py-3 text-slate-300 max-w-[220px] truncate font-telugu" lang="te" title={te}>
                         {te || <span className="text-slate-600 text-xs">—</span>}
