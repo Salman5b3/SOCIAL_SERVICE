@@ -196,12 +196,31 @@ def main():
         log.info(f"[{folder}] {len(pdfs)} PDFs to ingest")
         for i, pdf in enumerate(pdfs, 1):
             source_id = pdf.stem
+            # Fast skip: if a part already exists with this sourcePdf, skip
+            existing_part = parts.find_one({"sourcePdf": source_id, "assemblyCode": meta["code"]})
+            if existing_part:
+                count = voters.count_documents({"assemblyCode": meta["code"], "partNo": existing_part["partNo"]})
+                if count > 0:
+                    total_pdfs += 1
+                    if i % 50 == 0:
+                        log.info(f"[{folder}] {i}/{len(pdfs)} (skipping already-ingested)")
+                    continue
+
             res = ingest_pdf(pdf, meta["code"], source_id)
             if isinstance(res, tuple) and len(res) == 3:
                 count, part_no, records = res
             else:
                 count, part_no = res
                 records = []
+
+            # Skip if this part is already fully ingested (resume safety)
+            if part_no:
+                existing = voters.count_documents({"assemblyCode": meta["code"], "partNo": part_no})
+                if existing > 0 and existing == count:
+                    if i % 20 == 0:
+                        log.info(f"[{folder}] {i}/{len(pdfs)} skip (already ingested part {part_no})")
+                    total_pdfs += 1
+                    continue
 
             if records:
                 try:

@@ -18,19 +18,22 @@ const AGE_RANGES = {
   '51-100': [51, 200],
 };
 
-function displayName(v) {
-  // Prefer English transliteration, then Telugu, then fallback
+function displayEnglishName(v) {
+  // English transliteration — only show if proper OCR happened
   if (v.nameEn && v.nameEn.length > 1) return v.nameEn;
+  return null;
+}
+
+function displayTeluguName(v) {
+  // Prefer OCR'd Telugu (clean). Skip nameRaw because it has CID artifacts (?).
   if (v.nameTe && v.nameTe.length > 1) return v.nameTe;
-  if (v.nameRaw && v.nameRaw.length > 1) return v.nameRaw;
-  return `Voter #${v.serialNo}`;
+  return null;
 }
 
 function displayRelName(v) {
   if (v.relationNameEn && v.relationNameEn.length > 1) return v.relationNameEn;
   if (v.relationNameTe && v.relationNameTe.length > 1) return v.relationNameTe;
-  if (v.relationNameRaw && v.relationNameRaw.length > 1) return v.relationNameRaw;
-  return '—';
+  return null;
 }
 
 export default function SearchPage() {
@@ -147,7 +150,11 @@ export default function SearchPage() {
         </div>
 
         <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.results.map((v) => (
+          {data.results.map((v) => {
+            const en = displayEnglishName(v);
+            const te = displayTeluguName(v);
+            const relName = displayRelName(v);
+            return (
             <button
               key={`${v.assemblyCode}-${v.partNo}-${v.serialNo}`}
               onClick={() => openSourcePdf(v)}
@@ -159,11 +166,22 @@ export default function SearchPage() {
                     <User className="w-5 h-5 text-blue-300" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-white font-semibold leading-tight truncate">{displayName(v)}</div>
-                    {v.nameTe && v.nameEn ? (
-                      <div className="text-[10px] text-slate-500 truncate" lang="te">{v.nameTe}</div>
-                    ) : null}
-                    <div className="text-xs text-slate-400 mt-0.5">{v.gender} · Age {v.age || '—'}</div>
+                    {en ? (
+                      <>
+                        <div className="text-white font-semibold leading-tight truncate">{en}</div>
+                        {te && (
+                          <div className="text-sm text-slate-300 leading-tight truncate font-telugu" lang="te">{te}</div>
+                        )}
+                      </>
+                    ) : te ? (
+                      <div className="text-white font-semibold leading-tight truncate font-telugu" lang="te">{te}</div>
+                    ) : (
+                      <div className="text-slate-300 font-semibold leading-tight">
+                        Voter #{v.serialNo}
+                        <span className="block text-[10px] text-amber-400/80 font-normal mt-0.5">Name pending OCR</span>
+                      </div>
+                    )}
+                    <div className="text-xs text-slate-400 mt-1">{v.gender} · Age {v.age || '—'}</div>
                   </div>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-1 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 shrink-0">#{v.serialNo}</span>
@@ -171,14 +189,18 @@ export default function SearchPage() {
               <div className="mt-4 space-y-1.5 text-xs">
                 <div className="flex items-center gap-2 text-slate-300"><Hash className="w-3 h-3 text-slate-500" /> EPIC: <span className="font-mono text-white">{v.epicId}</span></div>
                 <div className="flex items-center gap-2 text-slate-300"><MapPin className="w-3 h-3 text-slate-500" /> Door No: <span className="text-white">{v.doorNo || '—'}</span></div>
-                <div className="flex items-center gap-2 text-slate-300 truncate"><User className="w-3 h-3 text-slate-500 shrink-0" /> {v.relation}: <span className="text-slate-200 truncate">{displayRelName(v)}</span></div>
+                <div className="flex items-center gap-2 text-slate-300 truncate">
+                  <User className="w-3 h-3 text-slate-500 shrink-0" /> {v.relation}:
+                  <span className="text-slate-200 truncate">{relName || '—'}</span>
+                </div>
               </div>
               <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px]">
                 <span className="text-slate-400">{assemblyName(v.assemblyCode)}</span>
                 <span className="text-emerald-400 inline-flex items-center gap-1"><FileText className="w-3 h-3" /> Part {v.partNo}</span>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
 
         {!loading && data.results.length === 0 && (

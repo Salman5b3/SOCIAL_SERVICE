@@ -128,18 +128,30 @@ export default function DirectoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.results.map((v, i) => (
+                  {data.results.map((v, i) => {
+                    const en = v.nameEn || '';
+                    const te = v.nameTe || '';
+                    const relEn = v.relationNameEn || '';
+                    const relTe = v.relationNameTe || '';
+                    return (
                     <tr key={`${v.assemblyCode}-${v.partNo}-${v.serialNo}`} className={`border-b border-white/5 hover:bg-white/[0.03] ${i % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
                       <td className="px-4 py-3 text-slate-400">{v.serialNo}</td>
-                      <td className="px-4 py-3 text-white max-w-[220px] truncate" title={v.nameEn || v.nameRaw}>{v.nameEn || '—'}</td>
-                      <td className="px-4 py-3 text-slate-300 max-w-[200px] truncate" lang="te" title={v.nameTe || v.nameRaw}>{v.nameTe || v.nameRaw || '—'}</td>
+                      <td className="px-4 py-3 text-white max-w-[220px] truncate" title={en}>
+                        {en || <span className="text-amber-400/70 text-xs italic">pending OCR</span>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300 max-w-[220px] truncate font-telugu" lang="te" title={te}>
+                        {te || <span className="text-slate-600 text-xs">—</span>}
+                      </td>
                       <td className="px-4 py-3 text-slate-300">{v.doorNo || '—'}</td>
-                      <td className="px-4 py-3 text-slate-300">{v.relation}{(v.relationNameEn || v.relationNameRaw) ? `: ${v.relationNameEn || v.relationNameRaw}` : ''}</td>
+                      <td className="px-4 py-3 text-slate-300 max-w-[200px] truncate" title={`${v.relation}${relEn ? ': ' + relEn : ''}`}>
+                        {v.relation}{relEn ? `: ${relEn}` : (relTe ? <span className="font-telugu" lang="te">: {relTe}</span> : '')}
+                      </td>
                       <td className="px-4 py-3 text-slate-300">{v.age || '—'}</td>
                       <td className="px-4 py-3 text-slate-300">{v.gender}</td>
                       <td className="px-4 py-3 font-mono text-xs text-blue-300">{v.epicId}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

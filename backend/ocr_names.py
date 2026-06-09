@@ -8,6 +8,7 @@ Updates voter records with `nameTe` (Telugu) and `nameEn` (English transliterati
 import os
 import re
 import sys
+import gc
 import time
 import logging
 from pathlib import Path
@@ -203,6 +204,7 @@ def main():
         ocr_time = time.time() - t0
         if not rows:
             log.warning(f"  [{folder}] part {part_no} — no rows OCR'd")
+            gc.collect()
             continue
 
         ops = []
@@ -221,6 +223,10 @@ def main():
         elapsed = time.time() - start
         rate = processed / elapsed * 60 if elapsed else 0
         log.info(f"  [{folder}] part {part_no} | OCR {ocr_time:.1f}s | updated {updated} | total {total_updates:,} | {rate:.1f} parts/min | {processed}/{len(all_parts)}")
+
+        # Free memory between parts
+        del rows, ops
+        gc.collect()
 
     log.info(f"DONE | parts: {processed} | updates: {total_updates:,} | time: {time.time()-start:.0f}s")
 

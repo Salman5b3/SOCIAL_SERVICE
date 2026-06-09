@@ -21,6 +21,12 @@ select {
   background-size: 14px;
 }
 
+/* Telugu text rendering with Noto Sans Telugu font */
+[lang="te"], .font-telugu {
+  font-family: 'Noto Sans Telugu', 'Inter', sans-serif !important;
+  font-feature-settings: "kern" 1;
+}
+
 /* Smooth transitions */
 button, a, input, select {
   transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
