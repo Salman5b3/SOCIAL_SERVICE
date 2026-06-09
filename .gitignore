@@ -82,3 +82,9 @@ memory/test_credentials.md
 android-sdk/data_input/Andhra
 Pradesh/KADAPA.zip
 data_input/Andhra
+.env
+.env.*
+*.env
+credentials.json
+*.key
+.credentials
