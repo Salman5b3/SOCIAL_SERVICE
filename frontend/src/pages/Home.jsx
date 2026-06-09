@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Zap, Brain, ShieldCheck, Home as HomeIcon, Filter, Shield, ArrowRight, Globe2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import IndiaMap from '../components/IndiaMap';
 import { FEATURES, BRAND, ALL_AP } from '../mock';
 import { api } from '../lib/api';
 
@@ -137,33 +136,28 @@ export default function HomePage() {
 
       <section className="max-w-6xl mx-auto px-6 pb-24">
         <div className="rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-8 md:p-12">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
-                AI-POWERED SEARCH
-                <br />
-                <span className="bg-gradient-to-r from-blue-400 to-fuchsia-400 bg-clip-text text-transparent">FOR INDIA</span>
-              </h2>
-              <p className="mt-5 text-slate-400 leading-relaxed">
-                Search through hundreds of thousands of registered voters quickly and accurately with our high-performance indexed search engine. Fast results built for scale.
-              </p>
-              <div className="mt-8 grid grid-cols-2 gap-4 max-w-sm">
-                {[
-                  { v: stats ? stats.assemblies : '—', l: 'Assemblies' },
-                  { v: stats ? formatNum(stats.parts) : '—', l: 'Parts Indexed' },
-                  { v: stats ? formatNum(stats.voters) : '—', l: 'Voter Records' },
-                  { v: stats ? stats.nodes : '—', l: 'Active Nodes' },
-                ].map((s) => (
-                  <div key={s.l} className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
-                    <div className="text-2xl font-bold text-white">{s.v}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{s.l}</div>
-                  </div>
-                ))}
+          <div className="max-w-3xl">
+            <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
+              AI-POWERED SEARCH
+              <br />
+              <span className="bg-gradient-to-r from-blue-400 to-fuchsia-400 bg-clip-text text-transparent">FOR INDIA</span>
+            </h2>
+            <p className="mt-5 text-slate-400 leading-relaxed">
+              Search through hundreds of thousands of registered voters quickly and accurately with our high-performance indexed search engine. Fast results built for scale.
+            </p>
+          </div>
+          <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+            {[
+              { v: stats ? stats.assemblies : '—', l: 'Assemblies' },
+              { v: stats ? formatNum(stats.parts) : '—', l: 'Parts Indexed' },
+              { v: stats ? formatNum(stats.voters) : '—', l: 'Voter Records' },
+              { v: stats ? stats.nodes : '—', l: 'Active Nodes' },
+            ].map((s) => (
+              <div key={s.l} className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                <div className="text-2xl md:text-3xl font-bold text-white">{s.v}</div>
+                <div className="text-xs text-slate-400 mt-1">{s.l}</div>
               </div>
-            </div>
-            <div>
-              <IndiaMap />
-            </div>
+            ))}
           </div>
         </div>
       </section>
