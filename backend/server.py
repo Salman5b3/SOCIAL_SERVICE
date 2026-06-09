@@ -82,6 +82,7 @@ async def parts_for_assembly(code: str):
 async def search_voters(
     q: str = "",
     assembly: str = "ALL",
+    partNo: Optional[int] = None,
     gender: str = "ALL",
     ageMin: int = 0,
     ageMax: int = 200,
@@ -91,6 +92,8 @@ async def search_voters(
     query: dict = {}
     if assembly and assembly != "ALL":
         query["assemblyCode"] = assembly
+    if partNo is not None and partNo > 0:
+        query["partNo"] = partNo
     if gender and gender != "ALL":
         query["gender"] = gender
     if ageMin > 0 or ageMax < 200:
@@ -104,12 +107,14 @@ async def search_voters(
         elif re.match(r"^\d+[-\d]*$", q_clean):
             query["doorNo"] = {"$regex": f"^{re.escape(q_clean)}", "$options": "i"}
         else:
-            # Text-ish: search across raw name fields (Telugu placeholder), EPIC, door
+            # Text-ish: search across English transliterated name, Telugu raw, EPIC, door
             query["$or"] = [
+                {"nameEn": {"$regex": re.escape(q_clean), "$options": "i"}},
+                {"relationNameEn": {"$regex": re.escape(q_clean), "$options": "i"}},
                 {"epicId": {"$regex": re.escape(q_clean), "$options": "i"}},
                 {"doorNo": {"$regex": f"^{re.escape(q_clean)}", "$options": "i"}},
                 {"nameRaw": {"$regex": re.escape(q_clean), "$options": "i"}},
-                {"relationNameRaw": {"$regex": re.escape(q_clean), "$options": "i"}},
+                {"nameTe": {"$regex": re.escape(q_clean), "$options": "i"}},
             ]
 
     page = max(1, page)

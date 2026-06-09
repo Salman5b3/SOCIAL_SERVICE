@@ -118,7 +118,8 @@ export default function DirectoryPage() {
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-white/10">
                     <th className="px-4 py-3">S.No</th>
-                    <th className="px-4 py-3">Name (partial)</th>
+                    <th className="px-4 py-3">Name (English)</th>
+                    <th className="px-4 py-3">Name (Telugu)</th>
                     <th className="px-4 py-3">Door No</th>
                     <th className="px-4 py-3">Relation</th>
                     <th className="px-4 py-3">Age</th>
@@ -130,9 +131,10 @@ export default function DirectoryPage() {
                   {data.results.map((v, i) => (
                     <tr key={`${v.assemblyCode}-${v.partNo}-${v.serialNo}`} className={`border-b border-white/5 hover:bg-white/[0.03] ${i % 2 === 0 ? 'bg-white/[0.01]' : ''}`}>
                       <td className="px-4 py-3 text-slate-400">{v.serialNo}</td>
-                      <td className="px-4 py-3 text-white max-w-[200px] truncate" lang="te" title={v.nameRaw}>{v.nameRaw || '—'}</td>
+                      <td className="px-4 py-3 text-white max-w-[220px] truncate" title={v.nameEn || v.nameRaw}>{v.nameEn || '—'}</td>
+                      <td className="px-4 py-3 text-slate-300 max-w-[200px] truncate" lang="te" title={v.nameTe || v.nameRaw}>{v.nameTe || v.nameRaw || '—'}</td>
                       <td className="px-4 py-3 text-slate-300">{v.doorNo || '—'}</td>
-                      <td className="px-4 py-3 text-slate-300">{v.relation}{v.relationNameRaw ? `: ${v.relationNameRaw}` : ''}</td>
+                      <td className="px-4 py-3 text-slate-300">{v.relation}{(v.relationNameEn || v.relationNameRaw) ? `: ${v.relationNameEn || v.relationNameRaw}` : ''}</td>
                       <td className="px-4 py-3 text-slate-300">{v.age || '—'}</td>
                       <td className="px-4 py-3 text-slate-300">{v.gender}</td>
                       <td className="px-4 py-3 font-mono text-xs text-blue-300">{v.epicId}</td>
