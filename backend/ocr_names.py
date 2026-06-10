@@ -11,6 +11,7 @@ import sys
 import gc
 import time
 import logging
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import pdfplumber
@@ -32,6 +33,8 @@ FOLDER_TO_CODE = {"RCT": "152", "LAKKIREDDIPALLI": "153", "KADAPA": "154"}
 CODE_TO_FOLDER = {v: k for k, v in FOLDER_TO_CODE.items()}
 
 DPI = 150  # 150 is enough; faster than 180
+OCR_WORKERS = max(1, int(os.getenv("OCR_WORKERS", min(4, os.cpu_count() or 1))))
+os.environ.setdefault("OMP_THREAD_LIMIT", "1")
 NAME_COL = 2          # 0:S.No 1:Door 2:Name 3:Rel 4:RelName 5:Sex 6:Age 7:EPIC
 REL_NAME_COL = 4
 SERIAL_COL = 0
@@ -159,10 +162,22 @@ def ocr_pdf(pdf_path: Path):
             n = len(pdf.pages)
     except Exception:
         return all_rows
-    # Skip page 1 (cover) — voter rows start on page 2
-    for pg in range(2, n + 1):
-        rows = ocr_page(pdf_path, pg)
-        all_rows.update(rows)
+    # Skip page 1 (cover) — voter rows start on page 2. Pages are independent,
+    # so process several concurrently while keeping each Tesseract process single-threaded.
+    page_nums = range(2, n + 1)
+    if OCR_WORKERS == 1:
+        for pg in page_nums:
+            all_rows.update(ocr_page(pdf_path, pg))
+        return all_rows
+
+    with ProcessPoolExecutor(max_workers=OCR_WORKERS) as executor:
+        futures = {executor.submit(ocr_page, pdf_path, pg): pg for pg in page_nums}
+        for future in as_completed(futures):
+            pg = futures[future]
+            try:
+                all_rows.update(future.result())
+            except Exception as e:
+                log.error(f"OCR worker error {pdf_path.name} page {pg}: {e}")
     return all_rows
 
 
