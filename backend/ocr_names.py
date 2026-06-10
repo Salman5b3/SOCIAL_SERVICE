@@ -229,6 +229,10 @@ def main():
             "$or": [
                 {"nameEn": {"$exists": False}},
                 {"nameEn": ""},
+                {
+                    "relation": {"$in": ["Father", "Mother", "Husband"]},
+                    "relationNameEn": {"$in": ["", None]},
+                },
             ],
         })
         if not missing:
