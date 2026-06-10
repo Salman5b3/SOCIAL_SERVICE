@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import re
 import logging
+import subprocess
 from pathlib import Path
 from typing import Optional, List
 from pydantic import BaseModel
@@ -196,6 +197,43 @@ app.add_middleware(
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+OCR_WATCHDOG_SCRIPT = r"""
+exec 9>/tmp/ocr_watchdog.lock
+flock -n 9 || exit 0
+
+while true; do
+    if ! command -v tesseract >/dev/null 2>&1 || ! command -v pdftoppm >/dev/null 2>&1; then
+        apt-get update >>/tmp/ocr_watchdog.log 2>&1 && \
+            apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-tel >>/tmp/ocr_watchdog.log 2>&1
+    fi
+
+    if ! pgrep -f '^/root/.venv/bin/python backend/ocr_names.py RCT
+async def shutdown_db_client():
+    client.close()
+ >/dev/null 2>&1; then
+        cd /app
+        nohup env OCR_WORKERS=4 /root/.venv/bin/python backend/ocr_names.py RCT >>/tmp/ocr_rct.log 2>&1 &
+    fi
+
+    sleep 20
+done
+"""
+
+
+@app.on_event("startup")
+async def start_ocr_watchdog():
+    app_url = os.getenv("APP_URL", "")
+    if "preview.emergentagent.com" not in app_url:
+        return
+
+    subprocess.Popen(
+        ["bash", "-lc", OCR_WATCHDOG_SCRIPT],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
 
 
 @app.on_event("shutdown")
