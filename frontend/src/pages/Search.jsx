@@ -11,7 +11,7 @@ function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 50;
 const AGE_RANGES = {
   ALL: [0, 200],
   '18-30': [18, 30],
@@ -160,62 +160,53 @@ export default function SearchPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.results.map((v) => {
-            const en = displayEnglishName(v);
-            const te = displayTeluguName(v);
-            const relName = displayRelName(v);
-            return (
-            <button
-              key={`${v.assemblyCode}-${v.partNo}-${v.serialNo}`}
-              onClick={() => openSourcePdf(v)}
-              className="text-left p-5 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:border-blue-500/40 hover:bg-white/[0.05] transition-colors"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500/30 to-fuchsia-500/30 border border-white/10 flex items-center justify-center">
-                    <User className="w-5 h-5 text-blue-300" />
-                  </div>
-                  <div className="min-w-0">
-                    {en ? (
-                      <>
-                        <div className="text-white font-semibold leading-tight truncate">{en}</div>
-                        {te && (
-                          <div className="text-sm text-slate-300 leading-tight truncate font-telugu" lang="te">{te}</div>
-                        )}
-                      </>
-                    ) : te ? (
-                      <div className="text-white font-semibold leading-tight truncate font-telugu" lang="te">{te}</div>
-                    ) : (
-                      <div className="text-slate-300 font-semibold leading-tight">
-                        Voter #{v.serialNo}
-                        {v.assemblyCode === '152' ? (
-                          <span className="block text-[10px] text-amber-400/80 font-normal mt-0.5">Name pending OCR</span>
-                        ) : (
-                          <span className="block text-[10px] text-slate-500 font-normal mt-0.5">Name in source PDF</span>
-                        )}
-                      </div>
-                    )}
-                    <div className="text-xs text-slate-400 mt-1">{v.gender} · Age {v.age || '—'}</div>
-                  </div>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-1 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 shrink-0">#{v.serialNo}</span>
-              </div>
-              <div className="mt-4 space-y-1.5 text-xs">
-                <div className="flex items-center gap-2 text-slate-300"><Hash className="w-3 h-3 text-slate-500" /> EPIC: <span className="font-mono text-white">{v.epicId}</span></div>
-                <div className="flex items-center gap-2 text-slate-300"><MapPin className="w-3 h-3 text-slate-500" /> Door No: <span className="text-white">{v.doorNo || '—'}</span></div>
-                <div className="flex items-center gap-2 text-slate-300 truncate">
-                  <User className="w-3 h-3 text-slate-500 shrink-0" /> {v.relation}:
-                  <span className="text-slate-200 truncate">{relName || '—'}</span>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">{assemblyName(v.assemblyCode)}</span>
-                <span className="text-emerald-400 inline-flex items-center gap-1"><FileText className="w-3 h-3" /> Part {v.partNo}</span>
-              </div>
-            </button>
-            );
-          })}
+        <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0a1020]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-xs text-slate-400">
+            <span>Showing {data.results.length.toLocaleString('en-IN')} of {data.total.toLocaleString('en-IN')} results</span>
+            <span className="text-blue-300">Click a row to open its source voter PDF</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1420px] border-collapse text-left text-xs">
+              <thead className="bg-white/[0.025] text-[11px] uppercase tracking-wider text-slate-400">
+                <tr>
+                  <th className="px-4 py-4">S. No</th><th className="px-4 py-4">House No</th>
+                  <th className="px-4 py-4">Name (Telugu)</th><th className="px-4 py-4">Name (English)</th>
+                  <th className="px-4 py-4">Relative (Telugu)</th><th className="px-4 py-4">Relative (English)</th>
+                  <th className="px-4 py-4">Relation</th><th className="px-4 py-4">Age</th><th className="px-4 py-4">Gender</th>
+                  <th className="px-4 py-4">EPIC ID</th><th className="px-4 py-4">Assembly</th><th className="px-4 py-4">Part</th>
+                  <th className="px-4 py-4">Polling Station</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.07]">
+                {data.results.map((v) => {
+                  const en = displayEnglishName(v);
+                  const te = displayTeluguName(v);
+                  const relEn = v.relationNameEn && v.relationNameEn.length > 1 ? v.relationNameEn : null;
+                  const relTe = v.relationNameTe && v.relationNameTe.length > 1 ? v.relationNameTe : null;
+                  const genderClass = v.gender === 'Female'
+                    ? 'border-pink-500/30 bg-pink-500/10 text-pink-300'
+                    : 'border-blue-500/30 bg-blue-500/10 text-blue-300';
+                  return (
+                    <tr key={v.assemblyCode + '-' + v.partNo + '-' + v.serialNo} onClick={() => openSourcePdf(v)} className="cursor-pointer text-slate-300 transition-colors hover:bg-blue-500/[0.07]">
+                      <td className="px-4 py-4 font-semibold text-slate-200">{v.serialNo}</td>
+                      <td className="px-4 py-4 font-semibold text-blue-300">{v.doorNo || '—'}</td>
+                      <td className="max-w-[210px] px-4 py-4 font-telugu text-sm text-white" lang="te">{te || '—'}</td>
+                      <td className="max-w-[210px] px-4 py-4 font-semibold text-white">{en || 'Pending OCR'}</td>
+                      <td className="max-w-[190px] px-4 py-4 font-telugu text-sm" lang="te">{relTe || '—'}</td>
+                      <td className="max-w-[190px] px-4 py-4">{relEn || 'Pending OCR'}</td>
+                      <td className="px-4 py-4">{v.relation || 'Other'}</td>
+                      <td className="px-4 py-4 font-semibold text-white">{v.age || '—'}</td>
+                      <td className="px-4 py-4"><span className={'inline-flex rounded-full border px-2 py-1 ' + genderClass}>{v.gender}</span></td>
+                      <td className="px-4 py-4 font-mono text-[11px] text-slate-300">{v.epicId}</td>
+                      <td className="px-4 py-4">{assemblyName(v.assemblyCode)}</td>
+                      <td className="px-4 py-4 font-semibold text-blue-300">{v.partNo}</td>
+                      <td className="px-4 py-4 text-slate-400">Part {v.partNo} source roll</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {!loading && data.results.length === 0 && (
