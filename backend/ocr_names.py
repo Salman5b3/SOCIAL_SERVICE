@@ -156,12 +156,18 @@ def ocr_page(pdf_path: Path, page_num: int, dpi=DPI):
                     name_te = crop_and_ocr(cells[NAME_COL])
                     rel_name_te = crop_and_ocr(cells[REL_NAME_COL])
                     if name_te or rel_name_te:
-                        out[serial] = {
-                            "nameTe": name_te,
-                            "nameEn": te_to_en(name_te),
-                            "relationNameTe": rel_name_te,
-                            "relationNameEn": te_to_en(rel_name_te),
-                        }
+                        fields = {}
+                        if name_te:
+                            fields.update({
+                                "nameTe": name_te,
+                                "nameEn": te_to_en(name_te),
+                            })
+                        if rel_name_te:
+                            fields.update({
+                                "relationNameTe": rel_name_te,
+                                "relationNameEn": te_to_en(rel_name_te),
+                            })
+                        out[serial] = fields
     except Exception as e:
         log.error(f"OCR error {pdf_path.name} page {page_num}: {e}")
     return out
