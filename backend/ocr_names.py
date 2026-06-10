@@ -118,9 +118,22 @@ def ocr_page(pdf_path: Path, page_num: int, dpi=DPI):
                         continue
                     s_x0, s_y0, s_x1, s_y1 = s_cell
                     s_text = (page.within_bbox((s_x0, s_y0, s_x1, s_y1)).extract_text() or "").strip()
-                    if not s_text.isdigit():
+                    serial_digits = re.sub(r"\D", "", s_text)
+                    if not serial_digits:
+                        cx0 = max(0, int(s_x0 * scale_x) - 2)
+                        cy0 = max(0, int(s_y0 * scale_y) - 2)
+                        cx1 = min(img.size[0], int(s_x1 * scale_x) + 2)
+                        cy1 = min(img.size[1], int(s_y1 * scale_y) + 2)
+                        serial_cell = img.crop((cx0, cy0, cx1, cy1))
+                        serial_text = pytesseract.image_to_string(
+                            serial_cell,
+                            lang="eng",
+                            config="--psm 7 -c tessedit_char_whitelist=0123456789",
+                        )
+                        serial_digits = re.sub(r"\D", "", serial_text)
+                    if not serial_digits:
                         continue
-                    serial = int(s_text)
+                    serial = int(serial_digits)
 
                     # Crop and OCR name cell
                     def crop_and_ocr(bbox):
@@ -209,9 +222,16 @@ def main():
         pdf_path = DATA_DIR / folder / f"{src}.pdf"
         if not pdf_path.exists():
             continue
-        # Skip parts already OCR'd
-        sample = voters.find_one({"assemblyCode": asm, "partNo": part_no, "nameEn": {"$exists": True, "$nin": ["", None]}})
-        if sample:
+        # Resume partially processed parts; skip only when every voter has OCR text.
+        missing = voters.find_one({
+            "assemblyCode": asm,
+            "partNo": part_no,
+            "$or": [
+                {"nameEn": {"$exists": False}},
+                {"nameEn": ""},
+            ],
+        })
+        if not missing:
             continue
 
         t0 = time.time()
