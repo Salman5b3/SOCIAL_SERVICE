@@ -175,9 +175,9 @@ export default function SearchPage() {
             <span>Showing {data.results.length.toLocaleString('en-IN')} of {data.total.toLocaleString('en-IN')} results</span>
             <span className="text-blue-300">Click a row to open its source voter PDF</span>
           </div>
-          <div className="overflow-x-auto">
+          <div className="max-h-[70vh] overflow-auto">
             <table className="w-full min-w-[1420px] border-collapse text-left text-xs">
-              <thead className="bg-white/[0.025] text-[11px] uppercase tracking-wider text-slate-400">
+              <thead className="sticky top-0 z-20 bg-[#0a1020] text-[11px] uppercase tracking-wider text-slate-400 shadow-lg">
                 <tr>
                   <th className="px-4 py-4">S. No</th><th className="px-4 py-4">House No</th>
                   <th className="px-4 py-4">Name (Telugu)</th><th className="px-4 py-4">Name (English)</th>
