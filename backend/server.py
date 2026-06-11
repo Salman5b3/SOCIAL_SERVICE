@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Header
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -185,6 +185,53 @@ async def serve_source_pdf(assembly_code: str, part_no: int):
     return FileResponse(str(pdf_path), media_type="application/pdf", filename=f"{assembly_code}-Part-{part_no}.pdf")
 
 
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+def _admin_token() -> str:
+    import hashlib
+    secret = os.getenv("ADMIN_SECRET", os.getenv("ADMIN_PASSWORD", "MRIndia@2026"))
+    return hashlib.sha256(("social-service-admin:" + secret).encode()).hexdigest()
+
+
+def _check_admin(authorization: Optional[str]):
+    if authorization != f"Bearer {_admin_token()}":
+        raise HTTPException(401, "Invalid or expired admin session")
+
+
+@api.post("/admin/login")
+async def admin_login(payload: AdminLoginRequest):
+    expected_user = os.getenv("ADMIN_USER", "admin@mrindia.org")
+    expected_password = os.getenv("ADMIN_PASSWORD", "MRIndia@2026")
+    if payload.username != expected_user or payload.password != expected_password:
+        raise HTTPException(401, "Invalid admin credentials")
+    return {"token": _admin_token(), "username": expected_user}
+
+
+@api.get("/admin/overview")
+async def admin_overview(authorization: Optional[str] = Header(None)):
+    _check_admin(authorization)
+    rct_total = await db.voters.count_documents({"assemblyCode": "152"})
+    return {
+        "voters": await db.voters.count_documents({}),
+        "assemblies": await db.assemblies.count_documents({}),
+        "parts": await db.parts.count_documents({}),
+        "rayachotyTotal": rct_total,
+        "rayachotyNames": await db.voters.count_documents({"assemblyCode": "152", "nameEn": {"$nin": ["", None]}}),
+        "rayachotyRelatives": await db.voters.count_documents({"assemblyCode": "152", "relation": {"$in": ["Father", "Mother", "Husband"]}, "relationNameEn": {"$nin": ["", None]}}),
+    }
+
+
+@api.post("/admin/ocr/restart")
+async def restart_rayachoty_ocr(authorization: Optional[str] = Header(None)):
+    _check_admin(authorization)
+    subprocess.run(["pkill", "-f", "^/root/.venv/bin/python backend/ocr_names.py RCT$"], check=False)
+    subprocess.Popen(["bash", "-lc", "cd /app && nohup env OCR_WORKERS=4 /root/.venv/bin/python backend/ocr_names.py RCT >>/tmp/ocr_rct.log 2>&1 &"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    return {"status": "restarted"}
+
+
 app.include_router(api)
 
 app.add_middleware(
@@ -202,21 +249,14 @@ logger = logging.getLogger(__name__)
 OCR_WATCHDOG_SCRIPT = r"""
 exec 9>/tmp/ocr_watchdog.lock
 flock -n 9 || exit 0
-
 while true; do
     if ! command -v tesseract >/dev/null 2>&1 || ! command -v pdftoppm >/dev/null 2>&1; then
-        apt-get update >>/tmp/ocr_watchdog.log 2>&1 && \
-            apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-tel >>/tmp/ocr_watchdog.log 2>&1
+        apt-get update >>/tmp/ocr_watchdog.log 2>&1 && apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-tel >>/tmp/ocr_watchdog.log 2>&1
     fi
-
-    if ! pgrep -f '^/root/.venv/bin/python backend/ocr_names.py RCT
-async def shutdown_db_client():
-    client.close()
- >/dev/null 2>&1; then
+    if ! pgrep -f '^/root/.venv/bin/python backend/ocr_names.py RCT$' >/dev/null 2>&1; then
         cd /app
         nohup env OCR_WORKERS=4 /root/.venv/bin/python backend/ocr_names.py RCT >>/tmp/ocr_rct.log 2>&1 &
     fi
-
     sleep 20
 done
 """
@@ -224,16 +264,9 @@ done
 
 @app.on_event("startup")
 async def start_ocr_watchdog():
-    app_url = os.getenv("APP_URL", "")
-    if "preview.emergentagent.com" not in app_url:
+    if "preview.emergentagent.com" not in os.getenv("APP_URL", ""):
         return
-
-    subprocess.Popen(
-        ["bash", "-lc", OCR_WATCHDOG_SCRIPT],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    subprocess.Popen(["bash", "-lc", OCR_WATCHDOG_SCRIPT], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
 
 
 @app.on_event("shutdown")

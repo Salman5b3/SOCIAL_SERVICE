@@ -1,108 +1,67 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, User, ShieldCheck, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BRAND } from '../mock';
+import { ArrowLeft, Database, FileText, LogOut, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { api } from '../lib/api';
+
+const initial = { voters: 0, assemblies: 0, parts: 0, rayachotyTotal: 0, rayachotyNames: 0, rayachotyRelatives: 0 };
 
 export default function AdminLogin() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [token, setToken] = useState(() => localStorage.getItem('adminToken') || '');
+  const [username, setUsername] = useState('admin@mrindia.org');
   const [password, setPassword] = useState('');
-  const [show, setShow] = useState(false);
+  const [overview, setOverview] = useState(initial);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const submit = (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setError('Authentication backend not configured yet. Please contact the administrator.');
-    }, 900);
+  const load = async (value = token) => {
+    if (!value) return;
+    try { setOverview(await api.adminOverview(value)); }
+    catch { setToken(''); localStorage.removeItem('adminToken'); }
   };
 
+  useEffect(() => { load(); }, []);
+
+  const login = async (e) => {
+    e.preventDefault(); setBusy(true); setError('');
+    try {
+      const result = await api.adminLogin({ username, password });
+      localStorage.setItem('adminToken', result.token); setToken(result.token); await load(result.token);
+    } catch (e) { setError(e.response?.data?.detail || 'Login failed'); }
+    finally { setBusy(false); }
+  };
+
+  const restart = async () => {
+    setBusy(true); setError('');
+    try { await api.restartOcr(token); setTimeout(() => load(), 1500); }
+    catch (e) { setError(e.response?.data?.detail || 'OCR restart failed'); }
+    finally { setBusy(false); }
+  };
+
+  const logout = () => { localStorage.removeItem('adminToken'); setToken(''); setPassword(''); };
+  const pct = overview.rayachotyTotal ? ((overview.rayachotyNames / overview.rayachotyTotal) * 100).toFixed(2) : '0.00';
+
+  if (!token) return (
+    <div className="min-h-screen bg-[#06060d] px-6 py-8 text-white">
+      <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft className="h-4 w-4" /> Home</Link>
+      <form onSubmit={login} className="mx-auto mt-24 max-w-md space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-8">
+        <ShieldCheck className="mx-auto h-12 w-12 text-blue-400" /><h1 className="text-center text-2xl font-bold">Admin Portal</h1>
+        <input value={username} onChange={e => setUsername(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#0d0d1a] px-4 py-3" placeholder="Admin email" />
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#0d0d1a] px-4 py-3" placeholder="Password" />
+        {error && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+        <button disabled={busy} className="w-full rounded-xl bg-blue-600 py-3 font-semibold disabled:opacity-50">{busy ? 'Signing in...' : 'Sign In'}</button>
+      </form>
+    </div>
+  );
+
+  const cards = [
+    ['Total voters', overview.voters, Users], ['Assemblies', overview.assemblies, Database], ['Polling parts', overview.parts, FileText], ['Rayachoty OCR', pct + '%', RefreshCw]
+  ];
   return (
-    <div className="min-h-screen bg-[#06060d] text-white relative overflow-hidden flex flex-col">
-      <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-blue-600/20 blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-fuchsia-600/15 blur-[120px] pointer-events-none" />
-
-      <div className="relative z-10 px-6 py-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm">
-          <ArrowLeft className="w-4 h-4" /> Back to Home
-        </Link>
-      </div>
-
-      <div className="relative z-10 flex-1 flex items-center justify-center px-6 pb-16">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/30 to-fuchsia-500/30 border border-white/10 items-center justify-center">
-              <ShieldCheck className="w-7 h-7 text-blue-300" />
-            </div>
-            <h1 className="mt-5 text-2xl font-bold tracking-tight">Admin Portal</h1>
-            <p className="mt-2 text-sm text-slate-400">Secure access for {BRAND.fullName}</p>
-          </div>
-
-          <form onSubmit={submit} className="p-7 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-xl space-y-5">
-            <div>
-              <label className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Email / Admin ID</label>
-              <div className="mt-2 relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@mrindia.org"
-                  className="w-full bg-[#0d0d1a] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/50 placeholder:text-slate-600"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Password</label>
-              <div className="mt-2 relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type={show ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-[#0d0d1a] border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-blue-500/50 placeholder:text-slate-600"
-                />
-                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200">
-                  {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 text-slate-400 cursor-pointer">
-                <input type="checkbox" className="accent-blue-500" /> Remember me
-              </label>
-              <a href="#" className="text-blue-400 hover:text-blue-300">Forgot password?</a>
-            </div>
-
-            {error && (
-              <div className="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-lg px-3 py-2.5">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-colors disabled:opacity-60"
-            >
-              {loading ? 'Authenticating...' : 'Sign In Securely'}
-            </button>
-          </form>
-
-          <p className="text-center text-xs text-slate-500 mt-6">
-            Authorized personnel only. All login attempts are logged.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#06060d] px-6 py-8 text-white">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex items-center justify-between"><div><p className="text-sm text-blue-400">Administration</p><h1 className="text-3xl font-bold">Control Panel</h1></div><button onClick={logout} className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2"><LogOut className="h-4 w-4" /> Logout</button></div>
+        <div className="mt-8 grid gap-4 md:grid-cols-4">{cards.map(([label,value,Icon]) => <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"><Icon className="h-5 w-5 text-blue-400"/><p className="mt-4 text-sm text-slate-400">{label}</p><p className="mt-1 text-2xl font-bold">{Number.isInteger(value) ? value.toLocaleString('en-IN') : value}</p></div>)}</div>
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6"><div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-xl font-semibold">Rayachoty OCR Processing</h2><p className="mt-1 text-sm text-slate-400">Names: {overview.rayachotyNames.toLocaleString('en-IN')} / {overview.rayachotyTotal.toLocaleString('en-IN')} · Relative names: {overview.rayachotyRelatives.toLocaleString('en-IN')}</p></div><div className="flex gap-3"><button onClick={() => load()} className="rounded-xl border border-white/10 px-4 py-2">Refresh</button><button onClick={restart} disabled={busy} className="rounded-xl bg-blue-600 px-4 py-2 font-semibold disabled:opacity-50">Restart OCR</button></div></div>{error && <p className="mt-4 text-sm text-red-300">{error}</p>}</div>
       </div>
     </div>
   );

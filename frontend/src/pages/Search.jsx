@@ -52,6 +52,7 @@ export default function SearchPage() {
 
   const [data, setData] = useState({ total: 0, results: [], pages: 1 });
   const [loading, setLoading] = useState(false);
+  const hasCriteria = Boolean(query.trim() || assembly !== 'ALL' || partNo || gender !== 'ALL' || ageRange !== 'ALL');
 
   useEffect(() => {
     api.assemblies().then(setAssemblies).catch(() => setAssemblies([]));
@@ -67,6 +68,11 @@ export default function SearchPage() {
   }, [assembly]);
 
   const fetchPage = useCallback(async () => {
+    if (!hasCriteria) {
+      setData({ total: 0, results: [], pages: 1 });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [ageMin, ageMax] = AGE_RANGES[ageRange] || [0, 200];
@@ -79,7 +85,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [query, assembly, partNo, gender, ageRange, page]);
+  }, [query, assembly, partNo, gender, ageRange, page, hasCriteria]);
 
   useEffect(() => {
     setPage(1);
@@ -88,10 +94,11 @@ export default function SearchPage() {
   useEffect(() => {
     const t = setTimeout(fetchPage, 250);
     return () => clearTimeout(t);
-  }, [fetchPage]);
+  }, [fetchPage, hasCriteria]);
 
   // Auto-refresh every 30s so newly-OCR'd names appear without manual reload
   useEffect(() => {
+    if (!hasCriteria) return undefined;
     const id = setInterval(fetchPage, 30000);
     return () => clearInterval(id);
   }, [fetchPage]);
@@ -114,7 +121,8 @@ export default function SearchPage() {
           <OcrProgressBanner />
         </div>
 
-        <div className="mt-6 flex flex-col lg:flex-row gap-3 p-2 rounded-2xl bg-white/[0.03] border border-white/10">
+        <div className="sticky top-0 z-30 mt-6 space-y-3 rounded-2xl border border-white/10 bg-[#06060d]/95 p-2 shadow-xl backdrop-blur-xl">
+        <div className="flex flex-col lg:flex-row gap-3">
           <select value={assembly} onChange={(e) => setAssembly(e.target.value)} className="lg:w-60 appearance-none bg-[#0d0d1a] border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500/50">
             <option value={ALL_AP.code}>{ALL_AP.name}</option>
             {assemblies.map((a) => <option key={a.code} value={a.code}>{a.name}</option>)}
@@ -142,7 +150,7 @@ export default function SearchPage() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 px-1 pb-1">
           <div className="flex items-center gap-2 text-xs text-slate-400"><Filter className="w-3.5 h-3.5" /> Filters:</div>
           {[
             { label: 'Gender', val: gender, set: setGender, opts: [['ALL','All'],['Male','Male'],['Female','Female']] },
@@ -160,8 +168,9 @@ export default function SearchPage() {
             <span className="text-white font-semibold">{data.total.toLocaleString('en-IN')}</span> records found
           </div>
         </div>
+        </div>
 
-        <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0a1020]">
+        {hasCriteria && <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0a1020]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-xs text-slate-400">
             <span>Showing {data.results.length.toLocaleString('en-IN')} of {data.total.toLocaleString('en-IN')} results</span>
             <span className="text-blue-300">Click a row to open its source voter PDF</span>
@@ -210,9 +219,17 @@ export default function SearchPage() {
               </tbody>
             </table>
           </div>
-        </div>
+        </div>}
 
-        {!loading && data.results.length === 0 && (
+        {!hasCriteria && (
+          <div className="mt-12 rounded-2xl border border-dashed border-white/10 py-16 text-center">
+            <Filter className="mx-auto h-10 w-10 text-slate-600" />
+            <p className="mt-4 font-medium text-slate-300">Select a filter or enter a search value</p>
+            <p className="mt-1 text-sm text-slate-500">No voter records are displayed until you choose search criteria.</p>
+          </div>
+        )}
+
+        {hasCriteria && !loading && data.results.length === 0 && (
           <div className="mt-12 text-center py-16 border border-dashed border-white/10 rounded-2xl">
             <SearchIcon className="w-10 h-10 text-slate-600 mx-auto" />
             <p className="mt-4 text-slate-300 font-medium">No matching voters found</p>
@@ -220,7 +237,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {data.pages > 1 && (
+        {hasCriteria && data.pages > 1 && (
           <div className="mt-8 flex items-center justify-center gap-2">
             <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-4 py-2 rounded-lg text-sm border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] disabled:opacity-40 disabled:cursor-not-allowed">Prev</button>
             <span className="px-4 py-2 text-sm text-slate-300">Page {page} of {data.pages.toLocaleString('en-IN')}</span>
