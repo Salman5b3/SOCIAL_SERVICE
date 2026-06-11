@@ -34,6 +34,7 @@ function displayTeluguName(v) {
 function displayRelName(v) {
   if (v.relationNameEn && v.relationNameEn.length > 1) return v.relationNameEn;
   if (v.relationNameTe && v.relationNameTe.length > 1) return v.relationNameTe;
+  if (v.relationNameRaw && v.relationNameRaw.length > 1) return v.relationNameRaw;
   return null;
 }
 
@@ -182,7 +183,9 @@ export default function SearchPage() {
                   const en = displayEnglishName(v);
                   const te = displayTeluguName(v);
                   const relEn = v.relationNameEn && v.relationNameEn.length > 1 ? v.relationNameEn : null;
-                  const relTe = v.relationNameTe && v.relationNameTe.length > 1 ? v.relationNameTe : null;
+                  const relTe = v.relationNameTe && v.relationNameTe.length > 1
+                    ? v.relationNameTe
+                    : (v.relationNameRaw && v.relationNameRaw.length > 1 ? v.relationNameRaw : null);
                   const genderClass = v.gender === 'Female'
                     ? 'border-pink-500/30 bg-pink-500/10 text-pink-300'
                     : 'border-blue-500/30 bg-blue-500/10 text-blue-300';
