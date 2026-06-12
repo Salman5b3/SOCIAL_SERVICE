@@ -35,7 +35,7 @@ export default function DirectoryPage() {
     setData(null);
     setPage(goToPage);
     try {
-      const res = await api.directory({ assembly, partNo: Number(part), page: goToPage, pageSize: PAGE_SIZE });
+      const res = await api.directory({ assembly, partNo: Number(part), page: goToPage, pageSize: PAGE_SIZE }, localStorage.getItem('adminToken'));
       setData(res);
     } catch (e) {
       setData({ total: 0, results: [], pages: 1 });
