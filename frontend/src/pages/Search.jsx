@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Search as SearchIcon, MapPin, User, Hash, ChevronDown, X, Filter, Loader2, FileText } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import OcrProgressBanner from '../components/OcrProgressBanner';
 import { ALL_AP } from '../mock';
 import { api } from '../lib/api';
 
@@ -116,10 +115,6 @@ export default function SearchPage() {
         </div>
         <h1 className="mt-4 text-3xl md:text-4xl font-extrabold tracking-tight">Voter Search</h1>
         <p className="mt-2 text-slate-400 text-sm">Search by name (English/Telugu), EPIC ID, house number or part. Click any record to view the source PDF.</p>
-
-        <div className="mt-4">
-          <OcrProgressBanner />
-        </div>
 
         <div className="sticky top-0 z-30 mt-6 space-y-3 rounded-2xl border border-white/10 bg-[#06060d]/95 p-2 shadow-xl backdrop-blur-xl">
         <div className="flex flex-col lg:flex-row gap-3">
