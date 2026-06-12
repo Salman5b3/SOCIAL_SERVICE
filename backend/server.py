@@ -146,7 +146,9 @@ async def directory_list(
     partNo: int,
     page: int = 1,
     pageSize: int = 50,
+    authorization: Optional[str] = Header(None),
 ):
+    _check_admin(authorization)
     query = {"assemblyCode": assembly, "partNo": partNo}
     page = max(1, page)
     pageSize = min(max(1, pageSize), 200)
