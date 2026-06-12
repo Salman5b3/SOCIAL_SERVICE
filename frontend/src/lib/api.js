@@ -10,7 +10,7 @@ export const api = {
   assemblies: () => http.get("/assemblies").then((r) => r.data),
   parts: (code) => http.get("/assemblies/" + code + "/parts").then((r) => r.data),
   search: (params) => http.get("/voters/search", { params }).then((r) => r.data),
-  directory: (params) => http.get("/voters/directory", { params }).then((r) => r.data),
+  directory: (params, token) => http.get("/voters/directory", { params, ...auth(token) }).then((r) => r.data),
   sourcePdfUrl: (assemblyCode, partNo) => API_BASE + "/source-pdf/" + assemblyCode + "/" + partNo,
   adminLogin: (credentials) => http.post("/admin/login", credentials).then((r) => r.data),
   adminOverview: (token) => http.get("/admin/overview", auth(token)).then((r) => r.data),
