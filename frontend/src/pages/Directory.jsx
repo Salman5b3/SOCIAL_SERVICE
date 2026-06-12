@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FolderOpen, FileText, ChevronRight, Loader2, ExternalLink } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import OcrProgressBanner from '../components/OcrProgressBanner';
 import { api } from '../lib/api';
 
 const PAGE_SIZE = 50;
@@ -45,25 +44,6 @@ export default function DirectoryPage() {
     }
   };
 
-  // Silent re-fetch (no flicker) — used by auto-refresh
-  const silentRefresh = async () => {
-    if (!assembly || !part) return;
-    try {
-      const res = await api.directory({ assembly, partNo: Number(part), page, pageSize: PAGE_SIZE });
-      setData(res);
-    } catch (_) {
-      /* ignore */
-    }
-  };
-
-  // Auto-refresh every 30s when a part is loaded (so OCR'd names appear automatically)
-  useEffect(() => {
-    if (!data) return;
-    const id = setInterval(silentRefresh, 30000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, assembly, part, page]);
-
   const openPdf = () => {
     if (assembly && part) {
       window.open(api.sourcePdfUrl(assembly, Number(part)), '_blank');
@@ -82,10 +62,6 @@ export default function DirectoryPage() {
         <p className="mt-2 text-slate-400 text-sm">
           Browse raw data exactly as it appears in the PDF, strictly ordered by Door Number and Age.
         </p>
-
-        <div className="mt-5">
-          <OcrProgressBanner />
-        </div>
 
         <div className="mt-8 p-6 rounded-2xl bg-white/[0.03] border border-white/10">
           <div className="grid md:grid-cols-3 gap-4">
