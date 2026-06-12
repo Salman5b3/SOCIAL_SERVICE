@@ -6,7 +6,6 @@ import { BRAND } from '../mock';
 const NAV = [
   { to: '/', label: 'Home' },
   { to: '/search', label: 'Search' },
-  { to: '/directory', label: 'Directory' },
 ];
 
 export default function Navbar() {
